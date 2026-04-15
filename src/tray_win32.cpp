@@ -100,8 +100,7 @@ void TrayInit(const TrayCallbacks& callbacks) {
     g_nid.uID              = 1;
     g_nid.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAY_MSG;
-    g_nid.hIcon            = LoadIconW(nullptr, IDI_NETWORK);
-    if (!g_nid.hIcon) g_nid.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    g_nid.hIcon            = LoadIconW(nullptr, IDI_APPLICATION);
     wcscpy_s(g_nid.szTip, L"IP Notifier");
     Shell_NotifyIconW(NIM_ADD, &g_nid);
 

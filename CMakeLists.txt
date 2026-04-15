@@ -80,6 +80,7 @@ if(WIN32)
         OpenSSL::SSL OpenSSL::Crypto
         shell32 user32 gdi32 comctl32
     )
+    target_compile_definitions(ip-notifier PRIVATE UNICODE _UNICODE)
 
 elseif(APPLE)
     find_package(OpenSSL REQUIRED)

@@ -2,7 +2,6 @@
 #include "notifier.h"
 #include "config.h"
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include <httplib.h>
 
 #include <fstream>

@@ -1,15 +1,31 @@
-# Binaries
+# ── Binaries ────────────────────────────────────
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-bin/
 
-# Config & Data
+# ── CMake build directories ──────────────────────
+build/
+build-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.cmake
+!CMakeLists.txt
+
+# ── IDE / editor ─────────────────────────────────
+.idea/
+.vscode/
+*.user
+*.suo
+*.sln.DotSettings.user
+.vs/
+
+# ── Config & runtime data (user-specific) ────────
 config.json
 last_ip.txt
 
-# OS metadata
+# ── OS metadata ───────────────────────────────────
 .DS_Store
 Thumbs.db

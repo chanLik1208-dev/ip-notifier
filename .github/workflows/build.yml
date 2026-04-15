@@ -1,0 +1,137 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+
+          # ── Windows ─────────────────────────────────────────────────────────
+          - os: windows-latest
+            artifact_name: ip-notifier.exe
+            cmake_preset: windows
+
+          # ── macOS ───────────────────────────────────────────────────────────
+          - os: macos-latest
+            artifact_name: ip-notifier-macos
+            cmake_preset: macos
+
+          # ── Linux ───────────────────────────────────────────────────────────
+          - os: ubuntu-latest
+            artifact_name: ip-notifier-linux
+            cmake_preset: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── Install deps: Linux ───────────────────────────────────────────────
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libappindicator3-dev \
+            libssl-dev \
+            libnotify-dev \
+            cmake \
+            ninja-build
+
+      # ── Install deps: macOS ───────────────────────────────────────────────
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install openssl cmake ninja
+
+      # ── Configure + Build: Windows ────────────────────────────────────────
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $opensslDir = "C:\Program Files\OpenSSL-Win64"
+          if (-not (Test-Path $opensslDir)) { $opensslDir = "C:\Program Files\OpenSSL" }
+          cmake -B build `
+            -DCMAKE_BUILD_TYPE=Release `
+            -G "Visual Studio 17 2022" -A x64 `
+            -DOPENSSL_ROOT_DIR="$opensslDir"
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build build --config Release
+
+      # ── Configure + Build: macOS ──────────────────────────────────────────
+      - name: Configure (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          OPENSSL_ROOT=$(brew --prefix openssl)
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja \
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT"
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: cmake --build build
+
+      # ── Configure + Build: Linux ──────────────────────────────────────────
+      - name: Configure (Linux)
+        if: runner.os == 'Linux'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: cmake --build build
+
+      # ── Collect artifact ──────────────────────────────────────────────────
+      - name: Collect artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: copy build\out\ip-notifier.exe ip-notifier.exe
+
+      - name: Collect artifact (Unix)
+        if: runner.os != 'Windows'
+        run: cp build/out/ip-notifier "${{ matrix.artifact_name }}"
+
+      # ── Upload ────────────────────────────────────────────────────────────
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/ip-notifier.exe/ip-notifier.exe
+            artifacts/ip-notifier-linux/ip-notifier-linux
+            artifacts/ip-notifier-macos/ip-notifier-macos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

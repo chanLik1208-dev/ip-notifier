@@ -1,0 +1,15 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Config & Data
+config.json
+last_ip.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db

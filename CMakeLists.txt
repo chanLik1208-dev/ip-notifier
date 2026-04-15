@@ -70,21 +70,16 @@ target_link_libraries(ip-notifier PRIVATE
     httplib::httplib
 )
 
-# HTTPS support for cpp-httplib
-target_compile_definitions(ip-notifier PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-
 # ── Platform-specific configuration ──────────────────────────────────────────
-set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 if(WIN32)
-    find_package(OpenSSL REQUIRED)
     target_link_libraries(ip-notifier PRIVATE
-        OpenSSL::SSL OpenSSL::Crypto
-        shell32 user32 gdi32 comctl32 crypt32 ws2_32 advapi32
+        shell32 user32 gdi32 comctl32 winhttp
     )
     target_compile_definitions(ip-notifier PRIVATE UNICODE _UNICODE)
 
 elseif(APPLE)
+    target_compile_definitions(ip-notifier PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
     find_package(OpenSSL REQUIRED)
     target_link_libraries(ip-notifier PRIVATE
         OpenSSL::SSL OpenSSL::Crypto
@@ -94,6 +89,7 @@ elseif(APPLE)
     )
 
 elseif(UNIX)
+    target_compile_definitions(ip-notifier PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
     find_package(PkgConfig REQUIRED)
     find_package(OpenSSL REQUIRED)
 

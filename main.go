@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -103,8 +104,13 @@ func runPythonGUI() {
 	}
 
 	cmd := exec.Command(pythonCmd, tmpFile)
+	
+	// Hide console window on Windows
+	if runtime.GOOS == "windows" {
+		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	}
+
 	if err := cmd.Run(); err != nil {
-		// cmd.Run() blocks until window is closed - normal behavior
 		fmt.Printf("GUI closed: %v\n", err)
 	}
 
@@ -113,7 +119,13 @@ func runPythonGUI() {
 }
 
 func findPython() string {
-	candidates := []string{"python", "python3"}
+	var candidates []string
+	if runtime.GOOS == "windows" {
+		candidates = []string{"pythonw", "python", "python3"}
+	} else {
+		candidates = []string{"python3", "python"}
+	}
+	
 	for _, c := range candidates {
 		if path, err := exec.LookPath(c); err == nil {
 			return path
